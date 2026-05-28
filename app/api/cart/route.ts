@@ -34,13 +34,13 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const { userId } = auth();
-  const { productId, quantity, price } = await req.json();
+  const { productId, quantity } = await req.json(); // Removed 'price'
 
   if (!userId) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  if (!productId || !quantity || !price) {
+  if (!productId || !quantity) {
     return new NextResponse("Missing required fields", { status: 400 });
   }
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
           userId,
           productId,
           quantity,
-          price,
+          // Removed price from here
         },
       });
       return NextResponse.json(cartItem);

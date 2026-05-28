@@ -1,60 +1,47 @@
-import { auth } from '@clerk/nextjs'
-import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import { auth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
 
-const prisma = new PrismaClient()
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  const { userId } = auth()
+  const { userId } = auth();
+  const { cartItems } = await req.json();
 
   if (!userId) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  })
-
-  if (!user) {
-    return new NextResponse('User not found', { status: 404 })
+  if (!cartItems || cartItems.length === 0) {
+    return new NextResponse("Cart is empty", { status: 400 });
   }
 
-  const cartItems = await prisma.cartItem.findMany({
-    where: { userId: user.id },
-    include: { product: true },
-  })
-
-  if (cartItems.length === 0) {
-    return new NextResponse('Cart is empty', { status: 400 })
-  }
-
-  const line_items = cartItems.map((item) => ({
+  const line_items = cartItems.map((item: any) => ({
     price_data: {
-      currency: 'usd',
+      currency: "usd",
       product_data: {
-        name: item.product.name,
-        images: [item.product.imageUrl],
+        name: item.name,
+        images: [item.imageUrl],
+        metadata: { productId: item.productId }, // Add productId to metadata here
       },
-      unit_amount: item.product.price,
+      unit_amount: Math.round(item.price * 100),
     },
     quantity: item.quantity,
-  }))
+  }));
 
   try {
     const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
       line_items,
-      mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cart`,
-      metadata: { userId: user.id },
-    })
+      mode: "payment",
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/cart`,
+      metadata: { userId: userId },
+    });
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('[STRIPE_CHECKOUT]', error)
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error("[CHECKOUT_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }

@@ -1,20 +1,26 @@
-import Navbar from '@/components/Navbar'
-import Link from 'next/link'
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import Link from "next/link";
 
 export default function SuccessPage() {
   return (
-    <>
-      <Navbar />
-      <main className="container mx-auto p-4 text-center">
-        <h1 className="text-3xl font-bold mb-4 text-green-600">Payment Successful!</h1>
-        <p className="text-lg mb-8">Thank you for your purchase. Your order has been placed.</p>
-        <Link href="/orders" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg text-xl">
-          View Your Orders
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+        <CheckCircleIcon className="h-24 w-24 text-green-500 mx-auto mb-6" />
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">Order Placed Successfully!</h1>
+        <p className="text-gray-600 text-lg mb-8">
+          Thank you for your purchase. Your order has been confirmed.
+        </p>
+        <Link href="/orders">
+          <p className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            View Your Orders
+          </p>
         </Link>
-        <Link href="/" className="ml-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-xl">
-          Continue Shopping
+        <Link href="/">
+          <p className="mt-4 text-indigo-600 hover:underline">
+            Continue Shopping
+          </p>
         </Link>
-      </main>
-    </>
-  )
+      </div>
+    </div>
+  );
 }
