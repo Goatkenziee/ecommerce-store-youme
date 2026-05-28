@@ -1,5 +1,4 @@
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
 
 interface ProductCardProps {
   product: {
@@ -10,20 +9,25 @@ interface ProductCardProps {
   };
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
-    <Link href={`/product/${product.id}`}>
-      <div className="border rounded-lg p-4 flex flex-col items-center hover:shadow-lg transition-shadow duration-300">
-        <Image
-          src={product.imageUrl}
-          alt={product.name}
-          width={200}
-          height={200}
-          className="object-cover rounded-md mb-4"
-        />
-        <h3 className="text-lg font-semibold text-gray-800">{product.name}</h3>
-        <p className="text-gray-600">${(product.price / 100).toFixed(2)}</p>
+    <div className="border rounded-lg shadow-md overflow-hidden bg-white">
+      <Image 
+        src={product.imageUrl}
+        alt={product.name}
+        width={300}
+        height={200}
+        className="w-full h-48 object-cover"
+      />
+      <div className="p-4">
+        <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+        <p className="text-gray-700 mb-3">${product.price.toFixed(2)}</p>
+        <button className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-200">
+          Add to Cart
+        </button>
       </div>
-    </Link>
+    </div>
   );
-}
+};
+
+export default ProductCard;
