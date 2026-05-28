@@ -1,4 +1,38 @@
+/* @tailwind base */
+/* @tailwind components */
+/* @tailwind utilities */
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start: #ffffff;
+  --background-end: rgb(214, 219, 220);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start: rgb(2, 0, 10); /* Darker background for dark mode */
+    --background-end: rgb(44, 31, 70);
+  }
+}
+
 body {
-  background-color: #f0f2f5;
-  color: #1c1e21;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      var(--background-start)
+    ) no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
 }

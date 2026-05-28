@@ -1,20 +1,17 @@
-import ProductCard from '@/components/ProductCard';
+import Link from 'next/link';
 
 export default function HomePage() {
-  // Placeholder for product data
-  const products = [
-    { id: '1', name: 'Product 1', price: 100, imageUrl: '/placeholder.jpg' },
-    { id: '2', name: 'Product 2', price: 200, imageUrl: '/placeholder.jpg' },
-    { id: '3', name: 'Product 3', price: 150, imageUrl: '/placeholder.jpg' },
-  ];
-
   return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Featured Products</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <h1 className="text-4xl font-bold mb-4">Welcome to YouMe E-commerce</h1>
+      <p className="text-lg mb-8">Your one-stop shop for amazing products.</p>
+      <div className="flex space-x-4">
+        <Link href="/products" className="px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-75">
+          Shop Products
+        </Link>
+        <Link href="/admin/products" className="px-6 py-3 bg-secondary text-white font-semibold rounded-lg shadow-md hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-opacity-75">
+          Admin Products
+        </Link>
       </div>
     </main>
   );

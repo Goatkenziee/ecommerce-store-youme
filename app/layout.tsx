@@ -1,16 +1,23 @@
+import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Ecommerce Store',
-  description: 'An ecommerce store built with Next.js and Tailwind CSS',
+  title: 'YouMe E-commerce',
+  description: 'An e-commerce store built with Next.js, Tailwind CSS, and Prisma',
 };
 
-export default function RootLayout({ children }: {
+export default function RootLayout({
+  children,
+}: {
   children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {/* TODO: Add Navbar here */}
+        {children}
+        {/* TODO: Add Footer here */}
+      </body>
     </html>
   );
 }
