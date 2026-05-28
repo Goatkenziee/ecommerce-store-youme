@@ -1,156 +1,122 @@
-import { auth } from '@clerk/nextjs'
-import { PrismaClient } from '@prisma/client'
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { auth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient()
-
-const cartItemSchema = z.object({
-  productId: z.string(),
-  quantity: z.number().int().min(1),
-})
-
-export async function POST(req: Request) {
-  const { userId } = auth()
+export async function GET() {
+  const { userId } = auth();
 
   if (!userId) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  })
+  try {
+    const cartItems = await prisma.cartItem.findMany({
+      where: { userId },
+      include: { product: true },
+    });
 
-  if (!user) {
-    // Create a new user in the database if they don't exist
-    const newUser = await prisma.user.create({
-      data: {
-        clerkId: userId,
-        email: '', // Placeholder, will be updated by webhook or user profile
-      },
-    })
-    // Update the user variable for subsequent operations
-    // This is a temporary fix, proper user sync should happen via webhook
-    // or on first login after clerk user object is available
-    Object.assign(user, newUser);
+    // Transform cart items to include product details directly
+    const formattedCartItems = cartItems.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      name: item.product.name,
+      imageUrl: item.product.imageUrl,
+      price: item.product.price, // Corrected to access price from product
+      quantity: item.quantity,
+    }));
+
+    return NextResponse.json({ cartItems: formattedCartItems });
+  } catch (error) {
+    console.error("[CART_GET_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  const { userId } = auth();
+  const { productId, quantity, price } = await req.json();
+
+  if (!userId) {
+    return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const body = await req.json()
-  const validation = cartItemSchema.safeParse(body)
-
-  if (!validation.success) {
-    return new NextResponse('Invalid request body', { status: 400 })
+  if (!productId || !quantity || !price) {
+    return new NextResponse("Missing required fields", { status: 400 });
   }
-
-  const { productId, quantity } = validation.data
 
   try {
     const existingCartItem = await prisma.cartItem.findUnique({
-      where: {
-        userId_productId: {
-          userId: user?.id || '', // Use user.id, if user is null, this will cause an error which is intended.
-          productId,
-        },
-      },
-    })
+      where: { userId_productId: { userId, productId } },
+    });
 
     if (existingCartItem) {
       const cartItem = await prisma.cartItem.update({
         where: { id: existingCartItem.id },
-        data: { quantity: existingCartItem.quantity + quantity },
-      })
-      return NextResponse.json(cartItem)
+        data: {
+          quantity: existingCartItem.quantity + quantity,
+        },
+      });
+      return NextResponse.json(cartItem);
     } else {
       const cartItem = await prisma.cartItem.create({
         data: {
-          userId: user?.id || '',
+          userId,
           productId,
           quantity,
+          price,
         },
-      })
-      return NextResponse.json(cartItem)
+      });
+      return NextResponse.json(cartItem);
     }
   } catch (error) {
-    console.error('[CART_POST]', error)
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error("[CART_POST_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
-  const { userId } = auth()
+  const { userId } = auth();
+  const { productId, quantity } = await req.json();
 
   if (!userId) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  })
-
-  if (!user) {
-    return new NextResponse('User not found', { status: 404 })
+  if (!productId || !quantity) {
+    return new NextResponse("Missing required fields", { status: 400 });
   }
-
-  const body = await req.json()
-  const validation = cartItemSchema.safeParse(body)
-
-  if (!validation.success) {
-    return new NextResponse('Invalid request body', { status: 400 })
-  }
-
-  const { productId, quantity } = validation.data
 
   try {
     const cartItem = await prisma.cartItem.update({
-      where: {
-        userId_productId: {
-          userId: user.id,
-          productId,
-        },
-      },
+      where: { userId_productId: { userId, productId } },
       data: { quantity },
-    })
-    return NextResponse.json(cartItem)
+    });
+    return NextResponse.json(cartItem);
   } catch (error) {
-    console.error('[CART_PUT]', error)
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error("[CART_PUT_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
-  const { userId } = auth()
+  const { userId } = auth();
+  const { productId } = await req.json();
 
   if (!userId) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse("Unauthorized", { status: 401 });
   }
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  })
-
-  if (!user) {
-    return new NextResponse('User not found', { status: 404 })
-  }
-
-  const { searchParams } = new URL(req.url)
-  const productId = searchParams.get('productId')
 
   if (!productId) {
-    return new NextResponse('Product ID is required', { status: 400 })
+    return new NextResponse("Missing required fields", { status: 400 });
   }
 
   try {
     await prisma.cartItem.delete({
-      where: {
-        userId_productId: {
-          userId: user.id,
-          productId,
-        },
-      },
-    })
-    return new NextResponse(null, { status: 204 })
+      where: { userId_productId: { userId, productId } },
+    });
+    return NextResponse.json({ message: "Item removed from cart" });
   } catch (error) {
-    console.error('[CART_DELETE]', error)
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error("[CART_DELETE_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
